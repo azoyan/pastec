@@ -13,20 +13,11 @@ pastec::Request::Request() : Fastcgipp::Request<char>(MaxPostSize) {
   std::cout << "Request started\n";
 }
 
-std::string pastec::Request::createHtml() {
-  std::cout << "Request:\n" << environment().contentType << "\n"
-            << environment().host << "\n"
-            << environment().requestUri  << "\n"
-            << environment().requestMethod << "\n"
-            << std::endl;
-
+std::string pastec::Request::getHtml(const std::string& requestUri) {
   std::string result;
+  if (!requestUri.empty()) {
 
-  Fastcgipp::Http::RequestMethod requestMethod = environment().requestMethod;
-  if (requestMethod ==  Fastcgipp::Http::RequestMethod::GET) {
-    std::string requestUri = std::string(environment().requestUri).substr(1);
-    if (!requestUri.empty()) {
-      auto data = s_storage.data(requestUri);
+      auto data = s_storage.data(requestUri.substr(1));
       if (data.empty()) {
         data = "404 Not found";
       }
@@ -59,14 +50,62 @@ std::string pastec::Request::createHtml() {
                "</body>"
                "</html>";
     }
+    return result;
+}
+
+std::string pastec::Request::handlePost(const std::multimap<std::string, std::string>& posts) {
+  std::string result;
+  for (auto p : posts) {
+    std::string url = s_storage.insert(p.second, std::chrono::minutes(1));
+    result = "HTTP/1.x 302 \r\n"
+             "Location: " + url + "\r\n"
+                                  "Content-Type: text/html; charset=utf-8\r\n\r\n";
   }
-  else if (requestMethod == Fastcgipp::Http::RequestMethod::POST) {
-    for (auto p : environment().posts) {
-      std::string url = s_storage.insert(p.second, std::chrono::minutes(1));
-      result = "HTTP/1.x 302 \r\n"
-               "Location: " + url + "\r\n"
-               "Content-Type: text/html; charset=utf-8\r\n\r\n";
-    }
+  return result;
+}
+
+std::string pastec::Request::errorHtml() {
+  std::string result;
+  result = "HTTP/1.x 200  \r\n"
+               "Content-Type: text/html; charset=utf-8\r\n\r\n"
+               "<!DOCTYPE html>"
+               "<html>"
+               "<body>"
+               "<center>"
+               "<div style=\"text-align:center;\">"
+               "ERROR"
+               "</div>"
+               "</center>"
+               "</form>"
+               "</body>"
+               "</html>";
+  return result;
+}
+
+std::string pastec::Request::createHtml() {
+  using namespace Fastcgipp::Http;
+  const RequestMethod requestMethod = environment().requestMethod;
+  const std::string requestUri      = environment().requestUri;
+  const unsigned int contentLength  = environment().contentLength;
+  const Address remoteAddress       = environment().remoteAddress;
+  const uint16_t remotePort         = environment().remotePort;
+
+
+  std::cout << "Сontent type = ["   << environment().contentType << "]\n"
+            << "Сontent length = [" << contentLength             << "]\n"
+            << "Host = ["           << environment().host        << "]\n"
+            << "Request URI = ["    << requestUri                << "]\n"
+            << "Request method ["   << requestMethod             << "]\n"
+            << "Remote address = [" << remoteAddress             << "]\n"
+            << "Remote port = ["    << remotePort                << "]\n"
+            << std::endl;
+
+  std::string result;
+  switch(requestMethod) {
+    case RequestMethod::ERROR: result = errorHtml(); break;
+    case RequestMethod::GET:   result = getHtml(requestUri); break;
+    case RequestMethod::POST:  result = handlePost(environment().posts); break;
+    default: break;
   }
   return result;
 }
