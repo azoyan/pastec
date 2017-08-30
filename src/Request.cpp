@@ -15,7 +15,7 @@ pastec::Request::Request() : Fastcgipp::Request<char>(MaxPostSize) {
 
 std::string pastec::Request::getHtml(const std::string& requestUri) {
   std::string result;
-  if (!requestUri.empty()) {
+  if (!requestUri.substr(1).empty()) {
 
       auto data = s_storage.data(requestUri.substr(1));
       if (data.empty()) {
@@ -91,7 +91,6 @@ std::string pastec::Request::createHtml() {
   const uint16_t remotePort         = environment().remotePort;
   const Address serverAddress       = environment().serverAddress;
   const uint16_t serverPort         = environment().serverPort;
-
 
   std::cout << "Сontent type = ["   << environment().contentType << "]\n"
             << "Сontent length = [" << contentLength             << "]\n"
