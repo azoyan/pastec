@@ -89,15 +89,19 @@ std::string pastec::Request::createHtml() {
   const unsigned int contentLength  = environment().contentLength;
   const Address remoteAddress       = environment().remoteAddress;
   const uint16_t remotePort         = environment().remotePort;
+  const Address serverAddress       = environment().serverAddress;
+  const uint16_t serverPort         = environment().serverPort;
 
 
   std::cout << "Сontent type = ["   << environment().contentType << "]\n"
             << "Сontent length = [" << contentLength             << "]\n"
             << "Host = ["           << environment().host        << "]\n"
             << "Request URI = ["    << requestUri                << "]\n"
-            << "Request method ["   << requestMethod             << "]\n"
+            << "Request method = [" << requestMethod             << "]\n"
             << "Remote address = [" << remoteAddress             << "]\n"
             << "Remote port = ["    << remotePort                << "]\n"
+            << "Server address = [" << serverAddress             << "]\n"
+            << "Server port = ["    << serverPort                << "]\n"
             << std::endl;
 
   std::string result;
