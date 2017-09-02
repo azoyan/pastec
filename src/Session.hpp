@@ -21,6 +21,7 @@ namespace pastec {
       m_data = data;
       setTime(lifeTime);
     }
+    
 
     void setTime(const std::chrono::seconds& lifeTime) noexcept {
       m_startUpTime = std::chrono::system_clock::now();
