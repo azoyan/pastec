@@ -11,8 +11,6 @@ int main(int argc, char *argv[]) {
     args.assign(argv + 1, argv + argc);
   }
 
-
-
   Fastcgipp::Manager<pastec::Request> manager;
   manager.setupSignals();
   bool ok = manager.listen(args.at(0).c_str(), args.at(1).c_str());

@@ -14,6 +14,7 @@ namespace pastec {
 
   private:
     std::vector<std::string> m_dictionary;
+    
     std::vector<Session> m_sessions;
   };
 }
