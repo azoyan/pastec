@@ -19,7 +19,7 @@ std::string pastec::Request::getHtml(const std::string& requestUri) {
 
       auto data = s_storage.data(requestUri.substr(1));
       if (data.empty()) {
-        data = "404 Not found";
+        data = "This page has been never created or time expired!";
       }
       result = "HTTP/1.x 200  \r\n"
                "Content-Type: text/html; charset=utf-8\r\n\r\n"
@@ -56,7 +56,8 @@ std::string pastec::Request::getHtml(const std::string& requestUri) {
 std::string pastec::Request::handlePost(const std::multimap<std::string, std::string>& posts) {
   std::string result;
   for (auto p : posts) {
-    std::string url = s_storage.insert(p.second, std::chrono::minutes(1));
+    std::string url = s_storage.insert(p.second, std::chrono::seconds(6));
+    posts.begin()->
     result = "HTTP/1.x 302 \r\n"
              "Location: " + url + "\r\n"
                                   "Content-Type: text/html; charset=utf-8\r\n\r\n";
@@ -101,6 +102,7 @@ std::string pastec::Request::createHtml() {
             << "Remote port = ["    << remotePort                << "]\n"
             << "Server address = [" << serverAddress             << "]\n"
             << "Server port = ["    << serverPort                << "]\n"
+            << "Files count = ["    << environment().files.size()<< "]\n"
             << std::endl;
 
   std::string result;

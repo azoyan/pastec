@@ -15,14 +15,15 @@ pastec::Key pastec::Storage::insert(const Data& data, const std::chrono::seconds
   Key key;
   const Time now = Time::clock::now();
   const Time expirationTime = now + duration;
-  if (auto potential = m_expireDates.crbegin(); (!m_expireDates.empty()) && (*potential).first < now) {
-    auto lifetimeNode = m_expireDates.extract((*potential).first);
-    lifetimeNode.key() = expirationTime;
-    m_expireDates.insert(std::move(lifetimeNode));
+  if (auto potential = m_expireDates.cbegin();(!m_expireDates.empty()) && (*potential).first < now) {
+    auto expiredNode = m_expireDates.extract((*potential).first);
+    expiredNode.key() = expirationTime;
+    m_expireDates.insert(std::move(expiredNode));  //обновляем дату-время истечения срока хранения
+    key = (*potential).second;
   }
   else {
     key = m_dictionary.at(m_expireDates.size());
-    m_expireDates.insert({expirationTime, key});
+    m_expireDates.insert(std::make_pair(expirationTime, key));
   }
   m_sessions.insert_or_assign(key, data);
   return key;

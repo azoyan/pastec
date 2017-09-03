@@ -5,9 +5,12 @@
 #include <chrono>
 #include <unordered_map>
 #include <map>
-#include "Session.hpp"
 
 namespace pastec {
+  using Time = std::chrono::time_point<std::chrono::system_clock>;
+  using Key  = std::string;
+  using Data = std::string;
+
   class Storage {
   public:
     Storage(const char* dictionaryFilePath = "../etc/google-10000-english-usa-no-swears.txt");
