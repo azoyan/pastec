@@ -1,4 +1,4 @@
-#ifndef STORAGE_H
+                                            #ifndef STORAGE_H
 #define STORAGE_H
 
 #include <vector>
@@ -21,7 +21,7 @@ namespace pastec {
   private:
     std::vector<std::string> m_dictionary;
     std::unordered_map<Key, Data> m_sessions;
-    std::map<Time, Key> m_expireDates;
+    std::map<Time, Key> m_dates;
   };
 }
 

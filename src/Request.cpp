@@ -1,85 +1,77 @@
-#include <iostream>
+ #include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <regex>
 #include "Request.h"
 #include "Storage.h"
 
 namespace {
   static pastec::Storage s_storage;
+
+  static std::ifstream start("start.html");
+  static std::string startPage = std::string("Content-Type: text/html; charset=utf-8\r\n\r\n")
+       + std::string(std::istreambuf_iterator<char>(start), std::istreambuf_iterator<char>());
+
+  static std::ifstream res("result.html");
+  static const std::string resultPage = std::string("HTTP/1.x 200  \r\nContent-Type: text/html; charset=utf-8\r\n\r\n") +
+             std::string(std::istreambuf_iterator<char>(res), std::istreambuf_iterator<char>());
+
+  static std::regex urlRegex(".*\\..*");
 }
 
-enum { Kb = 1024 };
-enum { MaxPostSize = 5 * Kb };
+enum { Kb = 1024, Mb = Kb * Kb };
+enum { MaxPostSize = 10 * Mb };
 
 pastec::Request::Request() : Fastcgipp::Request<char>(MaxPostSize) {
   std::cout << "Request started\n";
 }
 
 std::string pastec::Request::getHtml(const std::string& requestUri) {
-  std::string result;
+  std::string result = startPage;
   if (!requestUri.substr(1).empty()) {
-
-      auto data = s_storage.data(requestUri.substr(1));
-      if (data.empty()) {
-        data = "This page has been never created or time expired!";
-      }
-      result = "HTTP/1.x 200  \r\n"
-               "Content-Type: text/html; charset=utf-8\r\n\r\n"
-               "<!DOCTYPE html>"
-               "<html>"
-               "<body>"
-               "<center>"
-               "<div style=\"text-align:center;\">"
-               + data +
-               "</div>"
-               "</center>"
-               "</form>"
-               "</body>"
-               "</html>";
+    std::string data = s_storage.data(requestUri.substr(1));
+    if (data.empty()) {
+      data = "This page has been never created or time expired!";
     }
-    else {
-      result = "Content-Type: text/html; charset=utf-8\r\n\r\n"
-               "<!DOCTYPE html>"
-               "<html>"
-               "<body>"
-               "<form action=\"/\" id=\"userform\" method=\"post\">"
-               "<center>"
-               "<textarea rows=\"4\" cols=\"50\" name=\"data\" form=\"userform\"></textarea>"
-               "<br>"
-               "<input type=\"submit\">"
-               "</center>"
-               "</form>"
-               "</body>"
-               "</html>";
-    }
-    return result;
+    data = std::regex_replace(data, urlRegex, R"(<a href="$&" target="_blank">$&</a>)");
+    result = resultPage;
+    const std::string t = "{{data}}";
+    const uint f = resultPage.find(t);
+    result.replace(f, t.length(), data);
+  }
+  return result;
 }
 
 std::string pastec::Request::handlePost(const std::multimap<std::string, std::string>& posts) {
   std::string result;
-  for (auto p : posts) {
-    std::string url = s_storage.insert(p.second, std::chrono::seconds(6));
-    posts.begin()->
-    result = "HTTP/1.x 302 \r\n"
-             "Location: " + url + "\r\n"
-                                  "Content-Type: text/html; charset=utf-8\r\n\r\n";
+   uint lifetime = 15;
+  auto it = posts.find("min");
+  if (it != posts.end()) {
+    lifetime = std::stoi(it->second);
   }
+  const std::string& userData = posts.find("data")->second;
+
+  const std::string url = s_storage.insert(userData, std::chrono::seconds(lifetime));
+  result = "HTTP/1.x 302 \r\n" "Location: " + url + "\r\n"
+                                  "Content-Type: text/html; charset=utf-8\r\n\r\n";
   return result;
 }
 
 std::string pastec::Request::errorHtml() {
   std::string result;
   result = "HTTP/1.x 200  \r\n"
-               "Content-Type: text/html; charset=utf-8\r\n\r\n"
-               "<!DOCTYPE html>"
-               "<html>"
-               "<body>"
-               "<center>"
-               "<div style=\"text-align:center;\">"
-               "ERROR"
-               "</div>"
-               "</center>"
-               "</form>"
-               "</body>"
-               "</html>";
+           "Content-Type: text/html; charset=utf-8\r\n\r\n"
+           "<!DOCTYPE html>"
+           "<html>"
+           "<body>"
+           "<center>"
+           "<div style=\"text-align:center;\">"
+           "ERROR"
+           "</div>"
+           "</center>"
+           "</form>"
+           "</body>"
+           "</html>";
   return result;
 }
 
