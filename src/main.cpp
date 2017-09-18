@@ -14,8 +14,10 @@ int main(int argc, char *argv[]) {
   Fastcgipp::Manager<pastec::Request> manager;
   manager.setupSignals();
   bool ok = manager.listen(args.at(0).c_str(), args.at(1).c_str());
-  assert(ok);
-  manager.start();
-  manager.join();
+  if (ok) {
+    manager.start();
+    manager.join();
+  }
+
   return 0;
 }

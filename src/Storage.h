@@ -1,13 +1,16 @@
-#ifndef STORAGE_H
+                                            #ifndef STORAGE_H
 #define STORAGE_H
 
 #include <vector>
 #include <chrono>
 #include <unordered_map>
 #include <map>
-#include "Session.hpp"
 
 namespace pastec {
+  using Time = std::chrono::time_point<std::chrono::system_clock>;
+  using Key  = std::string;
+  using Data = std::string;
+
   class Storage {
   public:
     Storage(const char* dictionaryFilePath = "../etc/google-10000-english-usa-no-swears.txt");
@@ -18,7 +21,7 @@ namespace pastec {
   private:
     std::vector<std::string> m_dictionary;
     std::unordered_map<Key, Data> m_sessions;
-    std::map<Time, Key> m_expireDates;
+    std::map<Time, Key> m_dates;
   };
 }
 
