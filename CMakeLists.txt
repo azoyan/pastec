@@ -14,7 +14,6 @@ set(SOURCES
     src/Storage.cpp
     src/Request.h
     src/Request.cpp
-    src/Session.hpp
     src/Dictionary.hpp
    )
 

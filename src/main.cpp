@@ -1,23 +1,25 @@
 #include <fastcgi++/manager.hpp>
 #include "Request.h"
 #include <cassert>
+#include "rapidjson/document.h"
+#include "rapidjson/istreamwrapper.h"
+#include <fstream>
 
-int main(int argc, char *argv[]) {
-  std::string firstArg;
-  std::vector<std::string> args;
+int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
+  std::ifstream ifs("config.json");
+  rapidjson::IStreamWrapper isw(ifs);
+  rapidjson::Document configJson;
+  configJson.ParseStream(isw);
 
-  if (argc > 1) {
-    firstArg = argv[1];
-    args.assign(argv + 1, argv + argc);
-  }
+  const char* ip   = configJson["connection"]["ip"].GetString();
+  const char* port = configJson["connection"]["port"].GetString();
 
   Fastcgipp::Manager<pastec::Request> manager;
   manager.setupSignals();
-  bool ok = manager.listen(args.at(0).c_str(), args.at(1).c_str());
+  bool ok = manager.listen(ip, port);
   if (ok) {
     manager.start();
     manager.join();
   }
-
   return 0;
 }
