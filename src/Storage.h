@@ -5,6 +5,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <map>
+#include <optional>
 
 namespace pastec {
   using Time = std::chrono::time_point<std::chrono::system_clock>;
@@ -15,7 +16,7 @@ namespace pastec {
   public:
     Storage(const char* dictionaryFilePath = "../etc/google-10000-english-usa-no-swears.txt");
 
-    Key  insert(const Data& data, const std::chrono::seconds& duration) noexcept;
+    Key insert(const Data& data, const std::chrono::seconds& duration) noexcept;
     Data data(const Key& key) const noexcept;
 
   private:

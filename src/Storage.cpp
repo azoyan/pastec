@@ -22,14 +22,14 @@ pastec::Key pastec::Storage::insert(const Data& data, const std::chrono::seconds
     auto expiredNode = m_dates.extract(time);
     expiredNode.key() = expirationTime;
     m_dates.insert(std::move(expiredNode));
+    m_sessions.insert_or_assign(key, data);
     result = key;
   }
-  else {
-    result = m_dictionary.at(m_dates.size());
+  else if (size_t index = m_dates.size(); index < m_dictionary.size()) {
+    result = m_dictionary.at(index);
     m_dates.insert(std::make_pair(expirationTime, result));
-    assert(result != m_dictionary.back());
+    m_sessions.insert_or_assign(result, data);
   }
-  m_sessions.insert_or_assign(result, data);
   return result;
 }
 
