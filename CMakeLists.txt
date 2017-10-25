@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
 
 
 set(SOURCES
-   src/main.cpp
+    src/main.cpp
     src/Storage.h
     src/Storage.cpp
     src/Request.h

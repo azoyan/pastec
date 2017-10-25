@@ -7,9 +7,14 @@
 
 namespace {
   static pastec::Storage s_storage;
-  static const std::string startPage    = pastec::preloadPage("start.html");
-  static const std::string resultPage   = pastec::preloadPage("result.html");
-  static const std::string notFoundPage = pastec::preloadPage("notfound.html");
+  static const std::string startPage = pastec::preload("start.html");
+
+  static std::string resultPage   = pastec::preload("result.html");
+  static std::string notFoundPage = pastec::preload("notfound.html");
+
+  static const std::string headerOk       = pastec::preload("200.txt");
+  static const std::string headerNotFound = pastec::preload("404.txt");
+  static const std::string headerCreated  = pastec::preload("201.txt");
 
   static std::regex urlRegex(R"(@(https?|ftp)://(-\.)?([^\s/?\.#-]+\.?)+(/[^\s]*)?$@iS)");
 }
@@ -21,30 +26,29 @@ pastec::Request::Request() : Fastcgipp::Request<char>(MaxPostSize) {
   std::cout << "Request started\n";
 }
 
-std::string pastec::Request::getHtml(std::string& requestUri) {
-  std::string result;
+std::string pastec::Request::get(std::string& requestUri) {
   if (!requestUri.empty()) {
     requestUri = requestUri.substr(1);
   }
-  if (!requestUri.empty()) {
-    const std::string data = s_storage.data(requestUri);
-    if (!data.empty()) {
-      result = resultPage;
-      const std::string t = "{{data}}";
-      const uint pos = resultPage.find(t);
-      result.replace(pos, t.length(), data);
-    }
-    else {
-      result = notFoundPage;
-    }
+
+  if (requestUri.empty()) {
+    return headerOk + startPage;
+  }
+
+  std::string result;
+  if (const std::string userdata = s_storage.data(requestUri); !userdata.empty()) {
+    const std::string t = "{{userdata}}";
+    const uint pos = resultPage.find(t);
+    resultPage.replace(pos, t.length(), userdata);
+    result = headerOk + resultPage;
   }
   else {
-    result = startPage;
+    result = headerNotFound + notFoundPage;
   }
   return result;
 }
 
-std::string pastec::Request::handlePost(const std::multimap<std::string, std::string>& posts) {
+std::string pastec::Request::post(const std::multimap<std::string, std::string>& posts) {
   std::string result;
   uint lifetime = 15;
   auto it = posts.find("min");
@@ -52,28 +56,20 @@ std::string pastec::Request::handlePost(const std::multimap<std::string, std::st
     lifetime = std::stoi(it->second);
   }
   const std::string& userData = posts.find("data")->second;
-
-  //  for (auto [key, value] : posts) std::cout << key << " " << value << "\n";
-
-  const std::string url = s_storage.insert(userData, std::chrono::hours(lifetime));
+  const std::string url = s_storage.insert(userData, std::chrono::minutes(lifetime));
   if (!url.empty()) {
-    result = "HTTP/1.x 302 \r\n" "Location: " + url + "\r\n"
-                                                      "Content-Type: text/html; charset=utf-8\r\n\r\n";
-  }
-  else {
-    // result =error page'
+    result = headerCreated;
+    const std::string t = "{{url}}";
+    const uint pos = headerCreated.find(t);
+    result.replace(pos, t.length(), url);
   }
   return result;
 }
 
-std::string pastec::Request::errorHtml() {
-  return notFoundPage;
-}
-
-std::string pastec::Request::createHtml() {
+std::string pastec::Request::createResponse() {
   using namespace Fastcgipp::Http;
   const RequestMethod requestMethod = environment().requestMethod;
-  std::string requestUri      = environment().requestUri;
+  std::string requestUri            = environment().requestUri;
   const unsigned int contentLength  = environment().contentLength;
   const Address remoteAddress       = environment().remoteAddress;
   const uint16_t remotePort         = environment().remotePort;
@@ -89,26 +85,25 @@ std::string pastec::Request::createHtml() {
             << "Remote port = ["    << remotePort                << "]\n"
             << "Server address = [" << serverAddress             << "]\n"
             << "Server port = ["    << serverPort                << "]\n"
-            << "Files count = ["    << environment().files.size()<< "]\n"
+            << "Files count = ["    << environment().files.size() << "]\n"
             << std::endl;
 
   std::string result;
   switch(requestMethod) {
-    case RequestMethod::ERROR: result = errorHtml(); break;
-    case RequestMethod::GET:   result = getHtml(requestUri); break;
-    case RequestMethod::POST:  result = handlePost(environment().posts); break;
+    case RequestMethod::GET:  result = get(requestUri); break;
+    case RequestMethod::POST: result = post(environment().posts); break;
     default: break;
   }
   return result;
 }
 
 bool pastec::Request::response() {
-  const std::string& response = createHtml();
+  const std::string& response = createResponse();
   out << response;
   return true;
 }
 
-std::string pastec::preloadPage(const char* pagePath) {
+std::string pastec::preload(const char* pagePath) {
   std::ifstream stream(pagePath);
   const std::string result = std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
   return result;

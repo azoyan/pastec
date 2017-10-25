@@ -11,14 +11,13 @@ namespace  pastec {
   class Request : public Fastcgipp::Request<char> {
   public:
     Request();
-    static std::string getHtml(std::string& requestUri);
-    static std::string handlePost(const std::multimap<std::string, std::string>& posts);
-    static std::string errorHtml();
+    static std::string get(std::string& requestUri);
+    static std::string post(const std::multimap<std::string, std::string>& posts);
     bool response() override;
-    std::string createHtml();
+    std::string createResponse();
   };
 
-  static std::string preloadPage(const char* pagePath);
+  static std::string preload(const char* pagePath);
 }
 
 #endif // REQUEST_H

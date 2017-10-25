@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cassert>
 
-
 pastec::Storage::Storage(const char* dictionaryFilePath)
   : m_dictionary(CreateDictionary(dictionaryFilePath))
 {
@@ -15,21 +14,21 @@ pastec::Storage::Storage(const char* dictionaryFilePath)
 
 pastec::Key pastec::Storage::insert(const Data& data, const std::chrono::seconds& duration) noexcept {
   Key result;
+  Time time;
   const Time now = Time::clock::now();
   const Time expirationTime = now + duration;
   const std::pair<const pastec::Time, const char*> wrong{now, ""};
-  if (const auto&[time, key] = !m_dates.empty() ? *m_dates.begin() : wrong; time < now) {
+
+  if (std::tie(time, result) = !m_dates.empty() ? *m_dates.begin() : wrong; time < now) {
     auto expiredNode = m_dates.extract(time);
     expiredNode.key() = expirationTime;
     m_dates.insert(std::move(expiredNode));
-    m_sessions.insert_or_assign(key, data);
-    result = key;
   }
-  else if (size_t index = m_dates.size(); index < m_dictionary.size()) {
+  else if (const size_t index = m_dates.size(); index < m_dictionary.size()) {
     result = m_dictionary.at(index);
     m_dates.insert(std::make_pair(expirationTime, result));
-    m_sessions.insert_or_assign(result, data);
   }
+  m_sessions.insert_or_assign(result, data);
   return result;
 }
 
