@@ -9,14 +9,17 @@ namespace {
   static pastec::Storage s_storage;
   static const std::string startPage = pastec::preload("start.html");
 
-  static std::string resultPage   = pastec::preload("result.html");
-  static std::string notFoundPage = pastec::preload("notfound.html");
+  static const std::string resultPage   = pastec::preload("result.html");
+  static const std::string notFoundPage = pastec::preload("notfound.html");
 
   static const std::string headerOk       = pastec::preload("200.txt");
   static const std::string headerNotFound = pastec::preload("404.txt");
   static const std::string headerCreated  = pastec::preload("201.txt");
 
   static std::regex urlRegex(R"(@(https?|ftp)://(-\.)?([^\s/?\.#-]+\.?)+(/[^\s]*)?$@iS)");
+
+  static const std::string userDataTag = "{{userdata}}";
+  static const std::string urlTag      = "{{url}}";
 }
 
 enum { Kb = 1024, Mb = Kb * Kb };
@@ -35,12 +38,13 @@ std::string pastec::Request::get(std::string& requestUri) {
     return headerOk + startPage;
   }
 
-  std::string result;
+  std::string result = resultPage;
   if (const std::string userdata = s_storage.data(requestUri); !userdata.empty()) {
-    const std::string t = "{{userdata}}";
-    const uint pos = resultPage.find(t);
-    resultPage.replace(pos, t.length(), userdata);
-    result = headerOk + resultPage;
+    auto pos = result.find(userDataTag);
+    if (pos != std::string::npos) {
+      result.replace(pos, userDataTag.length(), userdata);
+      result = headerOk + result;
+    }
   }
   else {
     result = headerNotFound + notFoundPage;
@@ -59,9 +63,8 @@ std::string pastec::Request::post(const std::multimap<std::string, std::string>&
   const std::string url = s_storage.insert(userData, std::chrono::minutes(lifetime));
   if (!url.empty()) {
     result = headerCreated;
-    const std::string t = "{{url}}";
-    const uint pos = headerCreated.find(t);
-    result.replace(pos, t.length(), url);
+    const uint pos = headerCreated.find(urlTag);
+    result.replace(pos, urlTag.length(), url);
   }
   return result;
 }
